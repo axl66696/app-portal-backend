@@ -85,4 +85,54 @@ export class UserAccountController {
 
     message.respond(jsonCodec.encode(getUsersInfo));
   }
+
+  @Subscriber('insertNews')
+  insertNews(message: JsMsg, payload: any) {
+    try {
+
+      /**payload 排除_id  */
+      const { _id, ...resetUserInfo } = payload.data;
+      console.log("payload", payload)
+      message.ack();
+      console.log("payload.userCode", payload.data.userCode);
+      // console.log("resetUserInfo",resetUserInfo);
+      // console.log("resetUserInfo.userCode", resetUserInfo.userCode)
+      this.mongoDB.collections("user").collection.updateOne({userCode: payload.data.userCode}, {$push:{userNews:payload.data}});
+      setTimeout(()=>{
+        this.jetStreamService.publish("userAccount.wantUserNews", resetUserInfo);
+      }, 1000)
+   
+    } catch (error) {
+      console.error('Error processing order.create: ', error);
+      message.nak();
+    }
+  }
+
+  @Subscriber("wantUserNews")
+  newCreateOrder(message: JsMsg, payload: any) {
+    try {
+      this.orderService.processMessage(payload);
+      console.log("controller payload", payload)
+      console.log("controller 聽到的subject", message.subject)
+
+
+      console.log("payload.data.userCode", payload.userCode)
+
+      const breakingNews = this.mongoDB
+        .collections("user")
+        .findDocuments({'userCode':payload.userCode})
+        .then((news) => {
+          // console.log(x);
+          //  這裡拿到mongoDB資料之後要去publish給前端sub做畫面顯示用
+          this.jetStreamService.publish("userAccount.getNews.dashboard", news);
+          console.log('nats裡news更新後的資料',news);
+        });
+      console.log(breakingNews);
+      message.ack();
+
+    } catch (error) {
+      console.error("Error processing order.create: ", error);
+      message.nak();
+    }
+  }
 }

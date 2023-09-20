@@ -9,6 +9,7 @@ import { Codec, JsMsg, Msg } from 'nats';
 
 @Controller('appPage')
 export class appPageController {
+  
   appPageService: AppPageService; 
   constructor(appPageService = new AppPageService()
   ) {this.appPageService = appPageService;}
@@ -30,6 +31,7 @@ export class appPageController {
 
   @Replier('list')
   async getappPages(message: Msg, payload: any, jsonCodec: Codec<any>) {
+   console.log(payload)
    const appPages = await this.appPageService.get()
    console.log(appPages);
    message.respond(jsonCodec.encode(appPages));

@@ -70,6 +70,7 @@ export class AppPageService {
     // 取得所有資料（request/reply）
     async get(){
         const appPages = await this.mongoService.collections('appPage').findDocuments({})
+        console.log(appPages)
         return appPages
     }
 
