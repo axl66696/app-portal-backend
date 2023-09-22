@@ -16,29 +16,24 @@ export class appPageController {
 
   @Subscriber('insert')
     async createappPage(message: JsMsg, payload: any) {
-      this.appPageService.create(message,payload)
+      this.appPageService.create(message,payload.data)
     }
 
   @Subscriber('update')
     async updateappPage(message: JsMsg, payload: any) {
-      this.appPageService.update(message,payload)
+      this.appPageService.update(message,payload.data)
     }
 
   @Subscriber('delete')
     async deleteappPage(message: JsMsg, payload: any) {
-      this.appPageService.delete(message,payload)
+      this.appPageService.delete(message,payload.data)
     }
 
   @Replier('list')
   async getappPages(message: Msg, payload: any, jsonCodec: Codec<any>) {
-   console.log(payload)
+   console.log("show payload",payload.data)
    const appPages = await this.appPageService.get()
    console.log(appPages);
    message.respond(jsonCodec.encode(appPages));
   }
-
-  @Replier('search')
-  async searchappPages(message: Msg, payload: any, jsonCodec: Codec<any>) {
-    this.appPageService.search(message,payload,jsonCodec)
-   }
 }

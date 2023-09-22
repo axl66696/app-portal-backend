@@ -25,7 +25,7 @@ export class AppStoreService {
     update(message: JsMsg, payload: any){
         try { 
             console.log('Processing time update', payload);
-            this.mongoService.collections('appStore').collection.updateOne({_id: payload._id}, {$set:payload})
+            this.mongoService.collections('appStore').collection().updateOne({_id: payload._id}, {$set:payload})
             message.ack();
         } catch (error) {
             console.error('Error processing appStore.update: ', error);
@@ -37,7 +37,7 @@ export class AppStoreService {
     delete(message: JsMsg, payload: any){
     try { 
         console.log('Processing time delete', payload);
-        this.mongoService.collections('appStore').collection.deleteOne({_id: payload._id})
+        this.mongoService.collections('appStore').collection().deleteOne({_id: payload._id})
         message.ack();
       } catch (error) {
         console.error('Error processing appStore.delete: ', error);
@@ -65,7 +65,7 @@ export class AppStoreService {
     }
     // 搜尋特定資料
     async get(message: Msg, payload: any, jsonCodec: Codec<any>){
-      const appPages = await this.mongoService.collections('appStore').collection.findOne({_id: payload})
+      const appPages = await this.mongoService.collections('appStore').collection().findOne({_id: payload})
       console.log(appPages);
       message.respond(jsonCodec.encode(appPages));
     }

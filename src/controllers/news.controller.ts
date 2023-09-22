@@ -18,7 +18,7 @@ export class NewsController {
   @Subscriber("create")
   createOrder(message: JsMsg, payload: any) {
     try {
-      this.orderService.processMessage(payload);
+      this.orderService.processMessage(payload.data);
 
       message.ack();
 

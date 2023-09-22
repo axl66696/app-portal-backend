@@ -28,7 +28,7 @@ export class forgetPasswordUserController {
     console.log(payload.userCode)
     const getUserInfo = await this.mongoDB
       .collections("user")
-      .findDocuments({'userCode':payload.userCode,'eMail':payload.eMail});
+      .findDocuments({'userCode':payload.data.userCode,'eMail':payload.data.eMail});
     const userInfo:UserAccount=getUserInfo[0] as unknown as UserAccount
     console.log(userInfo)
 
@@ -81,7 +81,7 @@ export class forgetPasswordUserController {
   @Replier("auth")
   async auth(message: Msg, payload: any, jsonCodec: Codec<any>) {
     try{
-      const verifiedToken = jwt.verify(payload, process.env.saltKey) as UserAccount;  
+      const verifiedToken = jwt.verify(payload.data, process.env.saltKey) as UserAccount;  
       console.log(verifiedToken)
       const getUserInfo = await this.mongoDB
       .collections("user")

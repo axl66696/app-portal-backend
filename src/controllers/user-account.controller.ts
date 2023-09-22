@@ -22,9 +22,9 @@ export class UserAccountController {
   updateMany(message: JsMsg, payload: any) {
     try {
       message.ack();
-      for (const item of payload){
+      for (const item of payload.data){
         const { _id, ...resetUserInfo } = item;
-        this.mongoDB.collections("user").collection.updateMany({userCode:item.userCode},{$set:resetUserInfo});
+        this.mongoDB.collections("user").collection().updateMany({userCode:item.userCode},{$set:resetUserInfo});
       }
    
     } catch (error) {
@@ -38,9 +38,9 @@ export class UserAccountController {
     try {
       /**payload 排除_id  */
       
-      const { _id, ...resetUserInfo } = payload;
+      const { _id, ...resetUserInfo } = payload.data;
       message.ack();
-      this.mongoDB.collections("user").collection.updateOne({userCode: payload.userCode}, {$set:resetUserInfo});
+      this.mongoDB.collections("user").collection().updateOne({userCode: payload.data.userCode}, {$set:resetUserInfo});
 
     } catch (error) {
       console.error('Error processing order.create: ', error);
@@ -54,9 +54,9 @@ export class UserAccountController {
     try {
 
       /**payload 排除_id  */
-      const { _id, ...resetUserInfo } = payload;
+      const { _id, ...resetUserInfo } = payload.data;
       message.ack();
-      this.mongoDB.collections("user").collection.updateOne({userCode: payload.userCode}, {$set:resetUserInfo});
+      this.mongoDB.collections("user").collection().updateOne({userCode: payload.data.userCode}, {$set:resetUserInfo});
    
     } catch (error) {
       console.error('Error processing order.create: ', error);
@@ -97,7 +97,7 @@ export class UserAccountController {
       console.log("payload.userCode", payload.data.userCode);
       // console.log("resetUserInfo",resetUserInfo);
       // console.log("resetUserInfo.userCode", resetUserInfo.userCode)
-      this.mongoDB.collections("user").collection.updateOne({userCode: payload.data.userCode}, {$push:{userNews:payload.data}});
+      this.mongoDB.collections("user").collection().updateOne({userCode: payload.data.userCode}, {$push:{userNews:payload.data}});
       setTimeout(()=>{
         this.jetStreamService.publish("userAccount.wantUserNews", resetUserInfo);
       }, 1000)
@@ -111,7 +111,7 @@ export class UserAccountController {
   @Subscriber("wantUserNews")
   newCreateOrder(message: JsMsg, payload: any) {
     try {
-      this.orderService.processMessage(payload);
+      this.orderService.processMessage(payload.data);
       console.log("controller payload", payload)
       console.log("controller 聽到的subject", message.subject)
 

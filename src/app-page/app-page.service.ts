@@ -26,7 +26,7 @@ export class AppPageService {
     update(message: JsMsg, payload: any){
         try { 
             console.log('Processing time update', payload);
-            this.mongoService.collections('appPage').collection.updateOne({_id: payload._id}, {$set:payload})
+            this.mongoService.collections('appPage').collection().updateOne({_id: payload._id}, {$set:payload})
             message.ack();
         } catch (error) {
             console.error('Error processing appPage.update: ', error);
@@ -38,7 +38,7 @@ export class AppPageService {
     delete(message: JsMsg, payload: any){
     try { 
         console.log('Processing time delete', payload);
-        this.mongoService.collections('appPage').collection.deleteOne({[Object.keys(payload)[0]]: payload._id})
+        this.mongoService.collections('appPage').collection().deleteOne({[Object.keys(payload)[0]]: payload._id})
         message.ack();
       } catch (error) {
         console.error('Error processing appPage.delete: ', error);

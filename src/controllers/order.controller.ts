@@ -18,7 +18,7 @@ export class OrderController {
   @Subscriber('create')
   createOrder(message: JsMsg, payload: any) {
     try {
-      this.orderService.processMessage(payload);
+      this.orderService.processMessage(payload.data);
 
       message.ack();
 
@@ -34,7 +34,7 @@ export class OrderController {
   @Subscriber('*.*.update')
   updateOrder(message: JsMsg, payload: any) {
     try {
-      console.log('Processing time update', payload);
+      console.log('Processing time update', payload.data);
 
       message.ack();
     } catch (error) {

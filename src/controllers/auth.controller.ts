@@ -28,7 +28,7 @@ export class authController {
   async getOrders(message: Msg, payload: any, jsonCodec: Codec<any>) {
 
     console.log(payload)
-    const verifiedToken = jwt.verify(payload.token, process.env.saltKey) as LoginInfo;
+    const verifiedToken = jwt.verify(payload.data.token, process.env.saltKey) as LoginInfo;
     console.log(verifiedToken)
     const getUserInfo = await this.mongoDB
       .collections("user")

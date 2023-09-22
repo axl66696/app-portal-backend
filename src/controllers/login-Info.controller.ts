@@ -25,7 +25,7 @@ export class LoginInfoController {
   @Subscriber("login")
   createOrder(message: JsMsg, payload: any) {
     try {
-      this.orderService.processMessage(payload);
+      this.orderService.processMessage(payload.data);
 
       message.ack();
       this.jetStreamService.publish("user.ok", "Hello Againmnlnmlknlk");
@@ -56,13 +56,13 @@ export class LoginInfoController {
     console.log(process.env.saltKey)
     const getUserInfo = await this.mongoDB
       .collections("user")
-      .findDocuments({'userCode':payload.userCode,"passwordHash":payload.passwordHash,"orgNo":payload.orgNo});
+      .findDocuments({'userCode':payload.data.userCode,"passwordHash":payload.data.passwordHash,"orgNo":payload.data.orgNo});
     // console.log("userInfo", getUserInfo);
     const userInfo:UserAccount=getUserInfo[0] as unknown as UserAccount
 
     if(userInfo){
       const secret = process.env.saltKey;
-      const token= jwt.sign(payload, secret, { expiresIn: '30d', algorithm: 'HS256' });
+      const token= jwt.sign(payload.data, secret, { expiresIn: '30d', algorithm: 'HS256' });
       const returnMessage = {auth:true,userAccount: userInfo as UserAccount,token:token}
       message.respond(jsonCodec.encode(returnMessage));
     }
