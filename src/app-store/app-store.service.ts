@@ -10,10 +10,12 @@ export class AppStoreService {
   constructor(mongoService = new MongoBaseService('mongodb://localhost:27017', 'AppStoreDatabase')
 ) {this.mongoService = mongoService;}
     // 新增資料
-    create(message: JsMsg, payload: any){
+    async create(message: JsMsg, payload: any){
     try {
         console.log(payload)
-        this.mongoService.collections('appStore').insertDocument(payload)
+        await this.mongoService.connect()
+        await this.mongoService.collections('appStore').insertDocument(payload)
+        this.mongoService.close()
         message.ack();
     } catch (error) {
         console.error('Error processing appStore.create: ', error);
@@ -22,10 +24,12 @@ export class AppStoreService {
     }
 
     // 更新資料
-    update(message: JsMsg, payload: any){
+    async update(message: JsMsg, payload: any){
         try { 
             console.log('Processing time update', payload);
-            this.mongoService.collections('appStore').collection().updateOne({_id: payload._id}, {$set:payload})
+            await this.mongoService.connect();
+            await this.mongoService.collections('appStore').collection().updateOne({_id: payload._id}, {$set:payload})
+            this.mongoService.close();
             message.ack();
         } catch (error) {
             console.error('Error processing appStore.update: ', error);
@@ -34,10 +38,12 @@ export class AppStoreService {
     }
 
     // 刪除資料
-    delete(message: JsMsg, payload: any){
+    async delete(message: JsMsg, payload: any){
     try { 
         console.log('Processing time delete', payload);
-        this.mongoService.collections('appStore').collection().deleteOne({_id: payload._id})
+        await this.mongoService.connect()
+        await this.mongoService.collections('appStore').collection().deleteOne({_id: payload._id})
+        this.mongoService.close()
         message.ack();
       } catch (error) {
         console.error('Error processing appStore.delete: ', error);
@@ -46,7 +52,9 @@ export class AppStoreService {
     }    
     // 搜尋所有資料
     async getList(message: Msg, payload: any, jsonCodec: Codec<any>){
+      await this.mongoService.connect()
       const appPages = await this.mongoService.collections('appStore').findDocuments({})
+      this.mongoService.close()
       console.log(appPages);
       message.respond(jsonCodec.encode(appPages));
     }

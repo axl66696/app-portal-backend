@@ -31,7 +31,7 @@ export class appPageController {
 
   @Replier('list')
   async getappPages(message: Msg, payload: any, jsonCodec: Codec<any>) {
-   console.log("show payload",payload.data)
+   console.log("show payload", payload.data)
    const appPages = await this.appPageService.get()
    console.log(appPages);
    message.respond(jsonCodec.encode(appPages));

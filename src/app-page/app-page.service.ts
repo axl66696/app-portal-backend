@@ -11,10 +11,12 @@ export class AppPageService {
   ) {this.mongoService = mongoService;}
 
     // 新增資料
-    create(message: JsMsg, payload: any){
+    async create(message: JsMsg, payload: any){
     try {
         console.log(payload)
-        this.mongoService.collections('appPage').insertDocument(payload)
+        await this.mongoService.connect()
+        await this.mongoService.collections('appPage').insertDocument(payload)
+        this.mongoService.close()
         message.ack();
     } catch (error) {
         console.error('Error processing appPage.create: ', error);
@@ -23,10 +25,12 @@ export class AppPageService {
     }
 
     // 更新資料
-    update(message: JsMsg, payload: any){
+    async update(message: JsMsg, payload: any){
         try { 
             console.log('Processing time update', payload);
-            this.mongoService.collections('appPage').collection().updateOne({_id: payload._id}, {$set:payload})
+            await this.mongoService.connect()
+            await this.mongoService.collections('appPage').collection().updateOne({_id: payload._id}, {$set:payload})
+            this.mongoService.close
             message.ack();
         } catch (error) {
             console.error('Error processing appPage.update: ', error);
@@ -35,10 +39,12 @@ export class AppPageService {
     }
 
     // 刪除資料
-    delete(message: JsMsg, payload: any){
+    async delete(message: JsMsg, payload: any){
     try { 
         console.log('Processing time delete', payload);
-        this.mongoService.collections('appPage').collection().deleteOne({[Object.keys(payload)[0]]: payload._id})
+        await this.mongoService.connect();
+        await this.mongoService.collections('appPage').collection().deleteOne({_id : payload._id}); 
+        this.mongoService.close();
         message.ack();
       } catch (error) {
         console.error('Error processing appPage.delete: ', error);
@@ -50,7 +56,9 @@ export class AppPageService {
     async sub(message: JsMsg, payload: any){
         try { 
             console.log('Processing time sub', payload);
+            await this.mongoService.connect();
             const appPages = await this.mongoService.collections('appPage').findDocuments({})
+            this.mongoService.close()
             console.log(appPages)
             message.ack();
           } catch (error) {
@@ -69,8 +77,10 @@ export class AppPageService {
 
     // 取得所有資料（request/reply）
     async get(){
+        await this.mongoService.connect()
         const appPages = await this.mongoService.collections('appPage').findDocuments({})
         console.log(appPages)
+        this.mongoService.close()
         return appPages
     }
 
