@@ -52,9 +52,8 @@ export class AppStoreService {
     }    
     // 搜尋所有資料
     async getList(message: Msg, payload: any, jsonCodec: Codec<any>){
-      await this.mongoService.connect()
+      this.mongoService = new MongoBaseService('mongodb://localhost:27017', 'AppStoreDatabase')
       const appPages = await this.mongoService.collections('appStore').findDocuments({})
-      this.mongoService.close()
       console.log(appPages);
       message.respond(jsonCodec.encode(appPages));
     }

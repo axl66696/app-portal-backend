@@ -16,7 +16,6 @@ export class AppPageService {
         console.log(payload)
         await this.mongoService.connect()
         await this.mongoService.collections('appPage').insertDocument(payload)
-        this.mongoService.close()
         message.ack();
     } catch (error) {
         console.error('Error processing appPage.create: ', error);
@@ -58,7 +57,6 @@ export class AppPageService {
             console.log('Processing time sub', payload);
             await this.mongoService.connect();
             const appPages = await this.mongoService.collections('appPage').findDocuments({})
-            this.mongoService.close()
             console.log(appPages)
             message.ack();
           } catch (error) {
@@ -77,11 +75,9 @@ export class AppPageService {
 
     // 取得所有資料（request/reply）
     async get(){
-        await this.mongoService.connect()
-        const appPages = await this.mongoService.collections('appPage').findDocuments({})
-        console.log(appPages)
-        this.mongoService.close()
+        this.mongoService = new MongoBaseService('mongodb://localhost:27017', 'AppPageDatabase')
+        const appPages = await this.mongoService.collections('appPage').findDocuments({});
+        //this.mongoService.close()
         return appPages
     }
-
 }
