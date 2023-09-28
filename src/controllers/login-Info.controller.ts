@@ -53,11 +53,11 @@ export class LoginInfoController {
 
   @Replier("request")
   async getOrders(message: Msg, payload: any, jsonCodec: Codec<any>) {
-    console.log(process.env.saltKey)
+    console.log('saltkey',process.env.saltKey)
     const getUserInfo = await this.mongoDB
       .collections("user")
-      .findDocuments({'userCode':payload.userCode,"passwordHash":payload.passwordHash,"orgNo":payload.orgNo});
-    // console.log("userInfo", getUserInfo);
+      .findDocuments({'userCode':payload.data.userCode,"passwordHash":payload.data.passwordHash,"orgNo":payload.data.orgNo});
+    console.log("userInfo", getUserInfo);
     const userInfo:UserAccount=getUserInfo[0] as unknown as UserAccount
 
     if(userInfo){
@@ -73,7 +73,7 @@ export class LoginInfoController {
 
     // 如果payload.userName存在his.mongoDB.collections("users")中，則回傳true，否則回傳false
 
-    
+
     // const returnMessage = {
     //   auth: true,
     //   user: {} as any,
