@@ -6,7 +6,6 @@ import {
 } from "@his-base/jetstream";
 import { MongoBaseService } from "@his-base/mongo-base";
 import { Codec, JsMsg, Msg } from "nats";
-import { MyAppStore } from "@his-viewmodel/app-portal/dist/app/my-app-store";
 
 @Controller('UserAppStore')
 export class UserAppStoreController {
@@ -50,7 +49,7 @@ export class UserAppStoreController {
       /**第二階段：從 UserAppStore 集合中關聯 AppStore 數據 */
       {
         $lookup: {
-          from: "appStore", // 關聯的collection名稱
+          from: "AppStore", // 關聯的collection名稱
           localField: "appId", // UserAppStore 集合中的字段，用於關聯
           foreignField: "_id", // AppStore 集合中的字段，用於關聯
           as: "appStoreData" // 輸出字段的别名
