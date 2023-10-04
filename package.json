@@ -17,7 +17,7 @@
     "@his-base/mongo-base": "git+https://gitlab.aservice.com.tw/hpc-his/base/mongobase.git",
     "@his-model/nats-oriented-services": "git+https://gitlab.aservice.com.tw/hpc-dev/model/nats-oriented-services.git",
     "@his-viewmodel/app-page-editor": "git+https://gitlab.aservice.com.tw/hpc-dev/viewmodel/app-page-editor.git",
-    "@his-viewmodel/app-portal": "git+https://gitlab.aservice.com.tw/hpc-his/viewmodel/app-portal.git#develop",
+    "@his-viewmodel/app-portal": "git+https://gitlab.aservice.com.tw/hpc-his/viewmodel/app-portal.git#feature",
     "@nestjs/common": "^10.2.4",
     "@types/dotenv": "^8.2.0",
     "@types/jsonwebtoken": "^9.0.2",

@@ -8,7 +8,7 @@ import { MongoBaseService } from "@his-base/mongo-base";
 import { Codec, JsMsg, Msg } from "nats";
 import { MyAppStore } from "@his-viewmodel/app-portal/dist/app/my-app-store";
 
-@Controller("UserAppStore")
+@Controller('UserAppStore')
 export class UserAppStoreController {
   jetStreamService = JetStreamServiceProvider.get();
 
