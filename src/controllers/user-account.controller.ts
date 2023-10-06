@@ -61,40 +61,54 @@ export class UserAccountController {
 
   @Replier("GetUserToken")
   async getUserToken(message: Msg, payload: any, jsonCodec: Codec<any>) {
-    console.log(payload.data.userCode.code)
+    console.log(payload.data.userCode.code);
     const getUserInfo = await this.mongoDB
       .collections("UserAccount")
-      .findDocuments({"userCode.code": payload.data.userCode.code, "passwordHash": payload.data.passwordHash, "hospital.display": payload.data.orgNo});
-    const userInfo:UserAccount=getUserInfo[0] as unknown as UserAccount
-    console.log(userInfo)
+      .findDocuments({
+        "userCode.code": payload.data.userCode.code,
+        passwordHash: payload.data.passwordHash,
+        "hospital.display": payload.data.orgNo,
+      });
+    const userInfo: UserAccount = getUserInfo[0] as unknown as UserAccount;
+    console.log(userInfo);
 
-    if(userInfo){
+    if (userInfo) {
       const secret = process.env.saltKey;
-      const token= jwt.sign(payload.data, secret, { expiresIn: '30d', algorithm: 'HS256' });
-      const returnMessage = {userCode: userInfo.userCode, token: token}
+      const token = jwt.sign(payload.data, secret, {
+        expiresIn: "30d",
+        algorithm: "HS256",
+      });
+      const returnMessage = { userCode: userInfo.userCode, token: token };
       message.respond(jsonCodec.encode(returnMessage));
-    }
-    else{
-      const returnMessage = {userCode: {},token: ''}
+    } else {
+      const returnMessage = { userCode: {}, token: "" };
       message.respond(jsonCodec.encode(returnMessage));
     }
   }
 
   @Replier("GetUserAccount")
   async getUserAccount(message: Msg, payload: any, jsonCodec: Codec<any>) {
-    console.log(payload)
+    console.log(payload);
+    // const getUserInfo = await this.mongoDB
+    //   .collections("UserAccount")
+    //   .findDocuments({"userCode.code": payload.data});
+
+    // 因為mongoDBservice裡面的findDocuments會自動close掉mongoDB的連線
+    // 所以在這裡改成原生的mongoDB
+    await this.mongoDB.connect();
     const getUserInfo = await this.mongoDB
       .collections("UserAccount")
-      .findDocuments({"userCode.code": payload.data});
+      .collection()
+      .find({ "userCode.code": payload.data })
+      .toArray();
     // console.log("userInfo", getUserInfo);
-    const userInfo:UserAccount=getUserInfo[0] as unknown as UserAccount
-    console.log(userInfo)
-    if(userInfo){
-      const returnMessage = {userAccount: userInfo as UserAccount}
+    const userInfo: UserAccount = getUserInfo[0] as unknown as UserAccount;
+    console.log(userInfo);
+    if (userInfo) {
+      const returnMessage =  userInfo;
       message.respond(jsonCodec.encode(returnMessage));
-    }
-    else{
-      const returnMessage = {userAccount: {}}
+    } else {
+      const returnMessage =  {} ;
       message.respond(jsonCodec.encode(returnMessage));
     }
   }
@@ -109,7 +123,7 @@ export class UserAccountController {
         .collection()
         .updateOne(
           { "userCode.code": payload.data.userCode },
-          { $set: {"passwordHash": payload.data.passwordHash} }
+          { $set: { passwordHash: payload.data.passwordHash } }
         );
     } catch (error) {
       console.error("Error processing order.create: ", error);
@@ -121,41 +135,49 @@ export class UserAccountController {
   async sendMail(message: JsMsg, payload: any) {
     try {
       const getUserInfo = await this.mongoDB
-      .collections("UserAccount")
-      .findDocuments({
-        "userCode.code": payload.data.userCode,
-        eMail: payload.data.eMail,
-      });
+        .collections("UserAccount")
+        .findDocuments({
+          "userCode.code": payload.data.userCode,
+          eMail: payload.data.eMail,
+        });
       const userInfo: UserAccount = getUserInfo[0] as unknown as UserAccount;
       console.log(userInfo);
       const transporter = nodemailer.createTransport({
-        service: 'Gmail', // 例如，'Gmail' 或 'SMTP'
-  auth: {
-    user: 'h34076144@gs.ncku.edu.tw', // 你的電子郵件地址
-    pass: 'mmhz nyso oizj goxs'     // 你的電子郵件密碼
-  }})
-  const secret = process.env.saltKey;
-  const emailTemplate = fs.readFileSync('./src/email-template/email-template.html', 'utf-8');
-  const userName = userInfo.userCode.code
-  const userEmail = userInfo.eMail
-  const token = jwt.sign(userInfo, secret, { expiresIn: '900s', algorithm: 'HS256' });
-  const mailOptions = {
-    from: 'h34076144@gs.ncku.edu.tw',
-    to: userEmail,
-    subject: '忘記密碼通知 Forgot Password Notification',
-    html: emailTemplate.replace('{{ username }}', userName).replace('{{ token }}', 'http://localhost:10000/login/'+token)
-  };
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error(error);
-      // const returnMessage = {success:false}
-      // message.respond(jsonCodec.encode(returnMessage));
-    } 
-    else {
-      const returnMessage = {success:true}
-      console.log('Email sent: ' + returnMessage);
-    }
-  });
+        service: "Gmail", // 例如，'Gmail' 或 'SMTP'
+        auth: {
+          user: "h34076144@gs.ncku.edu.tw", // 你的電子郵件地址
+          pass: "mmhz nyso oizj goxs", // 你的電子郵件密碼
+        },
+      });
+      const secret = process.env.saltKey;
+      const emailTemplate = fs.readFileSync(
+        "./src/email-template/email-template.html",
+        "utf-8"
+      );
+      const userName = userInfo.userCode.code;
+      const userEmail = userInfo.eMail;
+      const token = jwt.sign(userInfo, secret, {
+        expiresIn: "900s",
+        algorithm: "HS256",
+      });
+      const mailOptions = {
+        from: "h34076144@gs.ncku.edu.tw",
+        to: userEmail,
+        subject: "忘記密碼通知 Forgot Password Notification",
+        html: emailTemplate
+          .replace("{{ username }}", userName)
+          .replace("{{ token }}", "http://localhost:10000/login/" + token),
+      };
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error(error);
+          // const returnMessage = {success:false}
+          // message.respond(jsonCodec.encode(returnMessage));
+        } else {
+          const returnMessage = { success: true };
+          console.log("Email sent: " + returnMessage);
+        }
+      });
       message.ack();
     } catch (error) {
       message.nak();
@@ -184,13 +206,15 @@ export class UserAccountController {
 
   @Replier("GetUserCode")
   async getUserCode(message: Msg, payload: any, jsonCodec: Codec<any>) {
-    const verifiedToken = jwt.verify(payload.data, process.env.saltKey) as string
-    if(verifiedToken) {
-      const returnMessage = verifiedToken
+    const verifiedToken = jwt.verify(
+      payload.data,
+      process.env.saltKey
+    ) as string;
+    if (verifiedToken) {
+      const returnMessage = verifiedToken;
       message.respond(jsonCodec.encode(returnMessage));
-    }
-    else {
-      const returnMessage = ''
+    } else {
+      const returnMessage = "";
       message.respond(jsonCodec.encode(returnMessage));
     }
   }
