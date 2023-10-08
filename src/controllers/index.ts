@@ -7,3 +7,4 @@ export * from "./app-store.controller.js"
 export * from "./auth.controller.js";
 export * from "./forget-password.controller.js"
 export * from "./user-app-store.controller.js"
+export * from "./user-image.controller.js"
