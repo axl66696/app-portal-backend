@@ -140,7 +140,6 @@ export class NewsController {
         });
       console.log(breakingNews);
       message.ack();
-
     } catch (error) {
       console.error("Error processing order.create: ", error);
       message.nak();
