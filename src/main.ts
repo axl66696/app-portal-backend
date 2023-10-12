@@ -31,6 +31,8 @@ export class NatsServer {
         controllerService.getControllerMetadata(controller);
 
       jetStreamServer.subscribe(consumer, (message, payload) => {
+        if (message.subject.includes('dashboard')) return message.ack();
+
         const foundSubscriber = subscribers.find((x) =>
           compareSubject(`${consumer}.${x.subject}`, message.subject),
         );

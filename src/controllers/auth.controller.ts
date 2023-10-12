@@ -27,7 +27,7 @@ export class authController {
   @Replier("request")
   async getOrders(message: Msg, payload: any, jsonCodec: Codec<any>) {
 
-    console.log(payload)
+    console.log('payload',payload)
     const verifiedToken = jwt.verify(payload.data.token, process.env.saltKey) as LoginInfo;
     console.log(verifiedToken)
     const getUserInfo = await this.mongoDB
@@ -48,7 +48,7 @@ export class authController {
 
     // 如果payload.userName存在his.mongoDB.collections("users")中，則回傳true，否則回傳false
 
-    
+
     // const returnMessage = {
     //   auth: true,
     //   user: {} as any,

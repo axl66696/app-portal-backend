@@ -7,13 +7,20 @@ import {
 import { OrderService } from "@his-model/nats-oriented-services";
 import { Codec, JsMsg, Msg } from "nats";
 import { MongoBaseService } from '@his-base/mongo-base';
+<<<<<<< HEAD
 import { News } from '@his-viewmodel/app-portal'
+=======
+>>>>>>> 5e2ffd24a1c345f6a68ee82267b8f9cff1c99bc6
 
 @Controller("news")
 export class NewsController {
   jetStreamService = JetStreamServiceProvider.get();
 
+<<<<<<< HEAD
   mongoDB = new MongoBaseService("mongodb://localhost:27017", "AppPortal");
+=======
+  mongoDB = new MongoBaseService("mongodb://localhost:27017", "newsDatabase");
+>>>>>>> 5e2ffd24a1c345f6a68ee82267b8f9cff1c99bc6
 
   constructor(
     private readonly orderService: OrderService = new OrderService()
@@ -57,17 +64,26 @@ export class NewsController {
   }
 
   @Subscriber("insertNews")
+<<<<<<< HEAD
   async insertNews(message: JsMsg, payload: any) {
     try {
 
       /**payload 排除_id  */
       // const { _id, ...resetUserInfo } = payload;
+=======
+  insertNews(message: JsMsg, payload: any) {
+    try {
+
+      /**payload 排除_id  */
+      const { _id, ...resetUserInfo } = payload;
+>>>>>>> 5e2ffd24a1c345f6a68ee82267b8f9cff1c99bc6
       console.log("payload", payload)
       message.ack();
       console.log("payload.data.userCode", payload.data.userCode);
       // console.log("resetUserInfo",resetUserInfo);
       // console.log("resetUserInfo.userCode", resetUserInfo.userCode)
       // this.mongoDB.collections("user").collection.updateOne({userCode: payload.data.userCode}, {$push:{userNews:payload.data}});
+<<<<<<< HEAD
       const tmp = {
         "_id": payload.data._id as String,
         "appId": payload.data.appId,
@@ -101,6 +117,15 @@ export class NewsController {
       await this.jetStreamService.publish("news.getNews", {data: payload.data.userCode});
       // this.jetStreamService.publish("news.callWantNews", payload.data.userCode);
       message.ack();
+=======
+      console.log("payload.data", payload.data)
+      this.mongoDB.collections("news").collection.insertOne(payload.data)
+
+      // setTimeout(()=>{
+      //   this.jetStreamService.publish("news.wantNews", payload.data.userCode);
+      // }, 100)
+      this.jetStreamService.publish("news.callWantNews", payload.data.userCode);
+>>>>>>> 5e2ffd24a1c345f6a68ee82267b8f9cff1c99bc6
 
     } catch (error) {
       console.error('Error processing order.create: ', error);
@@ -108,6 +133,7 @@ export class NewsController {
     }
   }
 
+<<<<<<< HEAD
   // @Subscriber("callWantNews")
   // callWantNews(message: JsMsg, payload: any) {
   //   try {
@@ -142,6 +168,37 @@ export class NewsController {
           console.log('nats裡news更新後的資料',news);
           console.log("execTime", news[0].execTime)
           console.log("execTime type", typeof news[0].execTime)
+=======
+  @Subscriber("callWantNews")
+  callWantNews(message: JsMsg, payload: any) {
+    try {
+      this.jetStreamService.publish("news.wantNews", payload);
+
+    } catch (error) {
+      console.error('Error processing order.create: ', error);
+      message.nak();
+    }
+  }
+
+  @Subscriber("wantNews")
+  wantNews(message: JsMsg, payload: any) {
+    try {
+      this.orderService.processMessage(payload);
+      console.log("controller payload", payload)
+      console.log("controller 聽到的subject", message.subject)
+
+
+      console.log("payload.data.userCode", payload)
+
+      const breakingNews = this.mongoDB
+        .collections("news")
+        .findDocuments({'userCode':payload})
+        .then((news) => {
+          // console.log(x);
+          //  這裡拿到mongoDB資料之後要去publish給前端sub做畫面顯示用
+          this.jetStreamService.publish("news.getNews.dashboard", news);
+          console.log('nats裡news更新後的資料',news);
+>>>>>>> 5e2ffd24a1c345f6a68ee82267b8f9cff1c99bc6
         });
       console.log(breakingNews);
       message.ack();
@@ -151,6 +208,7 @@ export class NewsController {
       message.nak();
     }
   }
+<<<<<<< HEAD
 
   @Subscriber("updateStatus")
   updateStatus(message: JsMsg, payload: any) {
@@ -172,4 +230,6 @@ export class NewsController {
       message.nak();
     }
   }
+=======
+>>>>>>> 5e2ffd24a1c345f6a68ee82267b8f9cff1c99bc6
 }
