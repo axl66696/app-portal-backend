@@ -47,13 +47,23 @@ export class NewsController {
     }
   }
 
-  @Replier("list")
-  async getOrders(message: Msg, payload: any, jsonCodec: Codec<any>) {
+  @Replier("appPortal.newsList")
+  async getNewsList(message: Msg, payload: any, jsonCodec: Codec<any>) {
+    console.log("payload", payload)
+    console.log("payload.data", payload.data);
+    
     const orders = await this.orderService.getAllOrders();
 
     console.log(orders);
-
-    message.respond(jsonCodec.encode(orders));
+    const breakingNews = this.mongoDB
+        .collections("News")
+        .findDocuments({'userCode':payload.data})
+        .then((news) => {
+          // console.log(news);
+          //  這裡拿到mongoDB資料之後要去publish給前端sub做畫面顯示用
+          message.respond(jsonCodec.encode(news));  
+        });
+    console.log("breakingNews",breakingNews);
   }
 
   @Subscriber("insertNews")
@@ -160,6 +170,53 @@ export class NewsController {
         this.jetStreamService.publish("news.callWantNews", payload.data.userCode);
       }, 10)
       // this.jetStreamService.publish("news.callWantNews", payload.data.userCode);
+      message.ack();
+    } catch (error) {
+      console.error("Error processing order.*.*.update: ", error);
+      message.nak();
+    }
+  }
+
+  @Subscriber("appPortal.setNews")
+  setNews(message: JsMsg, payload: any) {
+    try {
+      console.log("setNews payload", payload);
+      console.log("updateStatus payload.data.userCode", payload.data.userCode);
+      console.log("updateStatus payload.data.newsId", payload.data.newsId);
+
+      
+      const tmpDate = new Date()
+      
+      const tmp = {
+        "_id": payload.data._id as String,
+        "appId": payload.data.appId,
+        "userCode": payload.data.userCode,
+        "subject": payload.data.subject,
+        "url": payload.data.url,
+        "sharedData": payload.data.sharedData,
+        "period": {
+          "start": new Date(payload.data.period.start),
+          "end": new Date(payload.data.period.end)
+        },
+        "type": payload.data.type,
+        "execTime": new Date(payload.data.execTime),
+        "execStatus": payload.data.execStatus,
+        "updatedBy": payload.data.updatedBy,
+        "updatedAt": new Date(payload.data.updatedAt)
+      }
+
+      console.log("tmp", tmp)
+
+
+      // this.mongoDB.collections("News").updateDocument({userCode:tmp.userCode, _id:tmp._id},{$set:{"execStatus":{code:"60",display:"已讀/已完成"},"execTime": tmpDate}},{upsert:true})
+      this.mongoDB.collections("News").updateDocument({userCode:tmp.userCode, _id:tmp._id},{$set:tmp},{upsert:true})
+      // setTimeout(()=>{
+      //   this.jetStreamService.publish("news.callWantNews", payload.data.userCode);
+      // }, 10)
+      // this.jetStreamService.publish("news.callWantNews", payload.data.userCode);
+      this.jetStreamService.publish(`news.appPortal.${tmp.userCode.code}`, tmp);
+      
+      
       message.ack();
     } catch (error) {
       console.error("Error processing order.*.*.update: ", error);
