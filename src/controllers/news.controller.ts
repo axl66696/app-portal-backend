@@ -223,4 +223,5 @@ export class NewsController {
       message.nak();
     }
   }
+
 }
