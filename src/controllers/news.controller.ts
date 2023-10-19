@@ -19,7 +19,7 @@ export class NewsController {
     private readonly orderService: OrderService = new OrderService()
   ) {}
 
-  @Replier("find")
+  @Replier("news.find")
   async getNewsList(message: Msg, payload: any, jsonCodec: Codec<any>) {
     
     const orders = await this.orderService.getAllOrders();
@@ -32,7 +32,7 @@ export class NewsController {
         });
   }
 
-  @Subscriber("setNews")
+  @Subscriber("news.setNews.>")
   setNews(message: JsMsg, payload: any) {
     try {
       const tmpDate = new Date()
@@ -61,5 +61,53 @@ export class NewsController {
       message.nak();
     }
   }
+
+  @Subscriber("news.appNews")
+  published(message: JsMsg, payload: any) {
+    try {
+      const tmpDate = new Date()
+      const tmp = {
+        "_id": payload.data._id as String,
+        "appId": payload.data.appId,
+        "userCode": payload.data.userCode,
+        "subject": payload.data.subject,
+        "url": payload.data.url,
+        "sharedData": payload.data.sharedData,
+        "period": {
+          "start": new Date(payload.data.period.start),
+          "end": new Date(payload.data.period.end)
+        },
+        "type": payload.data.type,
+        "execTime": new Date(payload.data.execTime),
+        "execStatus": payload.data.execStatus,
+        "updatedBy": payload.data.updatedBy,
+        "updatedAt": new Date(payload.data.updatedAt)
+      }
+      message.ack();
+      this.mongoDB.collections("News").insertDocument(tmp)
+      //到db拿userCode
+      this.jetStreamService.publish("news.userNews.userCode", {_id:tmp._id, execTime:tmp.execTime})
+      
+    } catch (error) {
+      console.error("Error processing appPortal.setNews: ", error);
+      message.nak();
+    }
+  }
+
+  @Subscriber("news.userNews")
+  updateStatus(message: JsMsg, payload: any) {
+
+  }
+
+  @Replier("news.userNews")
+  getNewsLis(message: Msg, payload: any, jsonCodec: Codec<any>) {
+
+  }
+
+  @Subscriber("news.newsContent")
+  getNewsContent(message: JsMsg, payload: any) {
+
+  }
+
 
 }

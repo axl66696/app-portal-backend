@@ -14,7 +14,7 @@ export class UserImageController {
 
   constructor() {}
 
-  @Replier("GetUserImage")
+  @Replier("getUserImage")
   async getUserImage(message: Msg, payload: any, jsonCodec: Codec<any>) {
     console.log(payload.data);
 

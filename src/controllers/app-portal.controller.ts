@@ -19,14 +19,6 @@ export class AppPortalController {
 
   mongoDB = new MongoBaseService("mongodb://localhost:27017", "AppPortal");
 
-  // smtpServer = new SMTPServer.SMTPServer({
-  //   onConnect(session, callback) {
-  //     console.log('qqqqqqq')
-      
-  //   },
-  //   authOptional: false
-  // })
-
   constructor(
     private readonly orderService: OrderService = new OrderService()
   ) {}
@@ -48,25 +40,25 @@ export class AppPortalController {
     }
   }
 
-  @Subscriber("update.userFavorite")
-  async updateUserFavorite(message: JsMsg, payload: any) {
-    try {
-      /**payload 排除_id  */
+  // @Subscriber("update.userFavorite")
+  // async updateUserFavorite(message: JsMsg, payload: any) {
+  //   try {
+  //     /**payload 排除_id  */
 
-      const { _id, ...resetUserInfo } = payload.data;
-      message.ack();
-      this.mongoDB
-        .collections("user")
-        .collection()
-        .updateOne(
-          { userCode: payload.data.userCode },
-          { $set: resetUserInfo }
-        );
-    } catch (error) {
-      console.error("Error processing order.create: ", error);
-      message.nak();
-    }
-  }
+  //     const { _id, ...resetUserInfo } = payload.data;
+  //     message.ack();
+  //     this.mongoDB
+  //       .collections("user")
+  //       .collection()
+  //       .updateOne(
+  //         { userCode: payload.data.userCode },
+  //         { $set: resetUserInfo }
+  //       );
+  //   } catch (error) {
+  //     console.error("Error processing order.create: ", error);
+  //     message.nak();
+  //   }
+  // }
 
   @Replier("userAccount.userToken")
   async getUserToken(message: Msg, payload: any, jsonCodec: Codec<any>) {
@@ -327,6 +319,203 @@ export class AppPortalController {
         );
     } catch (error) {
       console.error("Error processing order.create: ", error);
+      message.nak();
+    }
+  }
+
+  @Replier("appStore.myAppStores")
+  async getMyAppStores(message: Msg, payload: any, jsonCodec: Codec<any>) {
+    
+    const pipeline = [
+      /**第一階段：篩選符合條件的 UserAppStore 數據 */
+      {
+        $match: {
+          'userCode.code': payload.data
+        }
+      },
+      /**第二階段
+       * 從 UserAppStore 集合中關聯 AppStore 數據 
+      */
+      {
+        $lookup: {
+          from: "AppStore", // 關聯的collection名稱
+          localField: "appId", // UserAppStore 集合中的字段，用於關聯
+          foreignField: "_id", // AppStore 集合中的字段，用於關聯
+          as: "appStoreData" // 輸出字段的别名
+        }
+      },
+      /**第三階段：將相關數據進行重構，生成合併後的文檔 */
+      {
+        $unwind: {
+          path: "$appStoreData", 
+          preserveNullAndEmptyArrays: true 
+        }
+      },
+      /**第四階段：從 AppStore 中的 home 字段關聯 AppPage 數據 */
+      {
+        $lookup: {
+          from: "AppPage", // 關聯的 collection 名稱
+          localField: "appStoreData.home", // 使用 appStoreData 中的 home 字段
+          foreignField: "_id", // AppPage 集合中的字段，用於關聯
+          as: "appPageData" // 輸出字段的别名
+        }
+      },
+      /**第五階段：輸出所需的欄位 */
+      {
+        $project: {
+          userCode: 1,
+          appId: "$appStoreData._id", // 使用 appStoreData 中的 _id
+          title: "$appStoreData.title",
+          versionNo: "$appStoreData.versionNo",
+          type: "$appStoreData.type",
+          url: "$appStoreData.url",
+          home: {
+            $arrayElemAt: ["$appPageData", 0] // appPageData 的第一筆資料
+          },
+          language: "$appStoreData.language",
+          icon: "$appStoreData.icon",
+          appPages: {
+            $arrayElemAt: ["$appStoreData.appPages", 0] // 提取 appPages 的第一筆資料
+          },
+          isFavorite: 1 // UserAppStore 中的 isFavorite
+        }
+      }
+    ];
+
+    await this.mongoDB.connect();
+    const myAppStore = await this.mongoDB.collections("UserAppStore").aggregateDocuments(pipeline);
+
+     console.log('myAppStore',myAppStore);
+    
+    if (myAppStore) {
+      message.respond(jsonCodec.encode(myAppStore));
+      console.log(message.respond(jsonCodec.encode(myAppStore)));
+    } 
+  }
+
+  @Replier("appStore.userAppStores")
+  async getUserAppStore(message: Msg, payload: any, jsonCodec: Codec<any>) {
+    
+    const userAppStore = await this.mongoDB.collections("UserAppStore").findDocuments({'userCode.code':payload.data});
+
+    if (userAppStore) {
+      message.respond(jsonCodec.encode(userAppStore));
+      console.log(`userAppStore`,message.respond(jsonCodec.encode(userAppStore)));
+    }  else {
+      const returnMessage = (`cant find userApp`);
+      message.respond(jsonCodec.encode(returnMessage));
+    }
+  }
+
+  @Subscriber("appStore.userFavorite")
+  async updateUserFavorite(message: JsMsg, payload: any) {
+    try {
+      /**payload 排除_id  */
+      const { _id, ...resetUserInfo } = payload.data;
+      console.log(`我的最愛`,payload.data)
+      message.ack();
+      await this.mongoDB.connect();
+      this.mongoDB
+        .collections("UserAppStore")
+        .collection()
+        .updateOne(
+          { userCode: payload.data.userCode ,appId : payload.data.appId },
+          { $set: resetUserInfo }
+        );
+    } catch (error) {
+      console.error("更新錯誤Error processing order.create: ", error);
+      message.nak();
+    }
+  }
+
+  @Subscriber("news.dashboard")
+  setaNews(message: JsMsg, payload: any) {
+    try {
+      console.log("setNews payload", payload);
+      console.log("updateStatus payload.data.userCode", payload.data.userCode);
+      console.log("updateStatus payload.data.newsId", payload.data.newsId);
+
+      
+      const tmpDate = new Date()
+      
+      const tmp = {
+        "_id": payload.data._id as String,
+        "appId": payload.data.appId,
+        "userCode": payload.data.userCode,
+        "subject": payload.data.subject,
+        "url": payload.data.url,
+        "sharedData": payload.data.sharedData,
+        "period": {
+          "start": new Date(payload.data.period.start),
+          "end": new Date(payload.data.period.end)
+        },
+        "type": payload.data.type,
+        "execTime": new Date(payload.data.execTime),
+        "execStatus": payload.data.execStatus,
+        "updatedBy": payload.data.updatedBy,
+        "updatedAt": new Date(payload.data.updatedAt)
+      }
+
+      console.log("tmp", tmp)
+
+
+      // this.mongoDB.collections("News").updateDocument({userCode:tmp.userCode, _id:tmp._id},{$set:{"execStatus":{code:"60",display:"已讀/已完成"},"execTime": tmpDate}},{upsert:true})
+      this.mongoDB.collections("News").updateDocument({userCode:tmp.userCode, _id:tmp._id},{$set:tmp},{upsert:true})
+      // setTimeout(()=>{
+      //   this.jetStreamService.publish("news.callWantNews", payload.data.userCode);
+      // }, 10)
+      // this.jetStreamService.publish("news.callWantNews", payload.data.userCode);
+      this.jetStreamService.publish(`news.appPortal.${tmp.userCode.code}`, tmp);
+      
+      
+      message.ack();
+    } catch (error) {
+      console.error("Error processing order.*.*.update: ", error);
+      message.nak();
+    }
+  }
+
+  @Replier("news.find")
+  async getNewsList(message: Msg, payload: any, jsonCodec: Codec<any>) {
+    
+    const orders = await this.orderService.getAllOrders();
+    await this.mongoDB.connect();
+
+    const breakingNews = await this.mongoDB
+        .collections("News")
+        .findDocuments({'userCode':payload.data});
+        // .then((news) => {
+        //   message.respond(jsonCodec.encode(news)); 
+        // });
+    message.respond(jsonCodec.encode(breakingNews));
+  }
+
+  @Subscriber("news.setNews.>")
+  async setNews(message: JsMsg, payload: any) {
+    try {
+      const tmpDate = new Date()
+      const tmp = {
+        "_id": payload.data._id as String,
+        "appId": payload.data.appId,
+        "userCode": payload.data.userCode,
+        "subject": payload.data.subject,
+        "url": payload.data.url,
+        "sharedData": payload.data.sharedData,
+        "period": {
+          "start": new Date(payload.data.period.start),
+          "end": new Date(payload.data.period.end)
+        },
+        "type": payload.data.type,
+        "execTime": new Date(payload.data.execTime),
+        "execStatus": payload.data.execStatus,
+        "updatedBy": payload.data.updatedBy,
+        "updatedAt": new Date(payload.data.updatedAt)
+      }
+      await this.mongoDB.collections("News").updateDocument({userCode:tmp.userCode, _id:tmp._id},{$set:tmp},{upsert:true})
+    
+      message.ack();
+    } catch (error) {
+      console.error("Error processing appPortal.setNews: ", error);
       message.nak();
     }
   }
